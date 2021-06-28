@@ -137,7 +137,6 @@ hashBinary :: [Bool]
            -> Int
            -> Int
 hashBinary q n k = go q n k 0
-
   where
     go :: [Bool] -> Int -> Int -> Int -> Int
     go (x:xs) n' k' sum = if x then
