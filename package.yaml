@@ -22,6 +22,22 @@ description:         Please see the README on GitHub at <https://github.com/gith
 dependencies:
 - base >= 4.7 && < 5
 
+default-extensions:
+  - ConstraintKinds
+  - DeriveGeneric
+  - DerivingStrategies
+  - GeneralizedNewtypeDeriving
+  - InstanceSigs
+  - KindSignatures
+  - LambdaCase
+  - OverloadedStrings
+  - RecordWildCards
+  - ScopedTypeVariables
+  - StandaloneDeriving
+  - TupleSections
+  - TypeApplications
+  - ViewPatterns
+
 library:
   source-dirs: src
   dependencies:
@@ -30,18 +46,45 @@ library:
     - binary >= 0.8
     - vector >= 0.12
     - primitive >= 0.7
+    - mtl >= 2.2
+    - rvar >= 0.2
+    - statistics >= 0.15
+  ghc-options:
+    - -Wall
+    - -Wcompat
+    - -Widentities
+    - -Wincomplete-uni-patterns
+    - -Wincomplete-record-updates
+    - -Wredundant-constraints
+    - -Wmissing-export-lists
+    - -Wpartial-fields
+    - -Wmissing-deriving-strategies
+    - -Wunused-packages
+    - -fhide-source-paths
+    - -freverse-errors
 executables:
   cards-exe:
     main:                Main.hs
     source-dirs:         app
     ghc-options:
-    - -threaded
-    - -rtsopts
-    - -with-rtsopts=-N
+      - -threaded
+      - -rtsopts
+      - -with-rtsopts=-N
+      - -Wall
+      - -Wcompat
+      - -Widentities
+      - -Wincomplete-uni-patterns
+      - -Wincomplete-record-updates
+      - -Wredundant-constraints
+      - -Wmissing-export-lists
+      - -Wpartial-fields
+      - -Wmissing-deriving-strategies
+      - -Wunused-packages
+      - -fhide-source-paths
+      - -freverse-errors
     dependencies:
-    - cards
-    - random-fu >= 0.2.7
-
+      - cards
+      - random-fu >= 0.2.7
 tests:
   cards-test:
     main:                Spec.hs
