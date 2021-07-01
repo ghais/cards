@@ -47,8 +47,7 @@ library:
     - vector >= 0.12
     - primitive >= 0.7
     - mtl >= 2.2
-    - rvar >= 0.2
-    - statistics >= 0.15
+    - rvar >= 0.2    
   ghc-options:
     - -Wall
     - -Wcompat

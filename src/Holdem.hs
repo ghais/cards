@@ -48,16 +48,12 @@ collectDealtCards Game{..} = let playerCards = (concatMap dealtHands players)
                                    (Just (Street c)) -> [c]
                                    _ -> []
                              in playerCards ++  flopCards ++ turnCard ++ streetCard
-  
-
 
 completeHands :: Game -> StateT Deck Maybe [[Card]]
 completeHands Game{..} = do
   playersCards <- mapM getPlayersCards players
   (Community (Flop c3 c4 c5) (Turn c6) (Street c7)) <- getCommunityCards flop turn street
   return [[c1, c2, c3, c4, c5, c6, c7] | (Hole c1 c2) <- playersCards]
-
-
 
 getPlayersCards :: Player -> StateT Deck Maybe Hole
 getPlayersCards player = do

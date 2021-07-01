@@ -15,26 +15,6 @@ import           Holdem.Evaluate
 
 
 
-
-
-
-randomCard :: RVar Card
-randomCard = do
-  suit <- uniform 0 3
-  rank  <- uniform 0 12
-  return $ newCard (toEnum rank) (toEnum suit)
-
-randomHand = do
-  hole <- liftM2 Hole randomCard  randomCard
-  flop <- liftM3 Flop randomCard randomCard randomCard
-  turn <- Turn <$> randomCard
-  street <- Street  <$> randomCard
-  return $ Hand hole (Community flop turn street)
-
-
-
-
-
 playerHands :: Game -> RVar [[Card]]
 playerHands game = do
   deck <- Card.shuffle (gameDeck game)
@@ -42,30 +22,9 @@ playerHands game = do
     (Just cards) -> return cards
     _            -> return []
 
-
-
-bar :: (Monoid a) => Maybe a -> IO a
-bar (Just a) = return a
-bar Nothing  = mempty
-
-
-
-game1 = Game
-  {
-    numPlayers = 4
-  , flop = Nothing
-  , turn = Nothing
-  , street = Nothing
-  , players = [
-        Player (Just $ newCard Ace Spade) (Just $ newCard Ace Heart)
-      , Player Nothing Nothing
-      , Player (Just $ newCard Ace Diamond) (Just $ newCard Ace Club)
-      , Player Nothing Nothing
-      ]
-  }
-
-
 gameDeck game = remove (collectDealtCards game) fullDeck
+
+
 
 
 minIndex :: (Ord a) => [a] -> Int
@@ -75,15 +34,22 @@ winners :: [Int] -> [Bool]
 winners scores = map (== minRank) scores where
   minRank = minimum scores
 
-simulate :: (RandomSource m DevRandom, PrimMonad m) => Game -> m [Int]
+averageScore :: Int -> [Bool] -> [Double]
+averageScore numPlayers winnerList = map (\x -> if x then 1/fromIntegral numWinners else 0) winnerList where
+  numWinners = length (filter (== True) winnerList) 
+
+
+simulate :: (RandomSource m DevRandom, PrimMonad m) => Game -> m [([Card], Int)]
 simulate game = do
   cards <- runRVar (playerHands game) DevRandom
-  mapM evaluate cards
+  scores <- mapM evaluate cards
+  return $ zip cards scores
 
-simulateWinners :: (RandomSource m DevRandom, PrimMonad m) => Game -> m [Int]
-simulateWinners game = do
-  scores <- simulate game
-  return $ winners scores
+simulateWinners :: (RandomSource m DevRandom, PrimMonad m) => Game -> m [Double]
+simulateWinners game@Game{..} = do
+  scores <- map snd <$> simulate game
+  let gameWinners = winners scores
+  return $ averageScore numPlayers gameWinners
 
 
 
@@ -92,8 +58,8 @@ play game@Game{..} n = do
   gameHands <- replicateM n $ simulateWinners game
   --result <- map (map evaluate7Cards) myhands
   --return result
-  let pecentIth i = (fromIntegral (length (filter (== i) gameHands))) / (fromIntegral n)
-  return $ map pecentIth [0..numPlayers-1]
+  return $ map (/fromIntegral n) (map sum (transpose gameHands))
+
 
 
 

@@ -10,6 +10,7 @@ import Data.Random (RVar)
 import Data.Random.List (shuffleN, shuffleNT)
 import Text.Read (Lexeme (Ident), Read (readPrec), lexP)
 import Data.Random.RVar (RVarT)
+import Data.Random.Distribution.Uniform (uniform)
 
 data Suit
   = Club
@@ -43,6 +44,14 @@ newtype Card = Card Int deriving stock (Eq, Ord)
 -- | Construct a new card.
 newCard :: Rank -> Suit -> Card
 newCard rank suite = Card $ fromEnum rank * 4 + fromEnum suite
+
+
+randomCard :: RVar Card
+randomCard = do
+  suit <- uniform 0 3
+  rank  <- uniform 0 12
+  return $ newCard (toEnum rank) (toEnum suit)
+
 
 data Deck = Deck !Int ![Card]
 

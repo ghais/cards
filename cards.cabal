@@ -62,7 +62,6 @@ library
     , random-fu >=0.2.7
     , random-source >=0.3
     , rvar >=0.2
-    , statistics >=0.15
     , vector >=0.12
   default-language: Haskell2010
 
