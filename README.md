@@ -1,3 +1,3 @@
 # cards
 
-MonteCarlo simulator for poker games. Work in progress
+MonteCarlo simulator for poker games.
