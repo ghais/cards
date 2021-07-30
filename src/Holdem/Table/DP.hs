@@ -3,15 +3,15 @@ module Holdem.Table.DP
     dpLookup
   ) where
 
-import qualified Data.Vector.Unboxed as V
+
 import qualified Data.Array.Unboxed as Array
 import Data.Array.Base (unsafeAt)
 import GHC.Arr (unsafeIndex)
 
 
-dpLookup :: V.Vector Int -> Int -> Int -> Int
+dpLookup :: Array.UArray Int Int -> Int -> Int -> Int
 dpLookup q i k = dp2 `unsafeAt` idx
-  where idx = unsafeIndex ((0,0,0), (4,13,9)) (q `V.unsafeIndex` i, 13 - i - 1, k)
+  where idx = unsafeIndex ((0,0,0), (4,13,9)) (q `unsafeAt` i, 13 - i - 1, k)
 
 dp2 :: Array.UArray (Int, Int, Int) Int
 dp2 = Array.listArray ((0,0,0), (4,13,9)) [

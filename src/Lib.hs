@@ -37,7 +37,7 @@ averageScore winnerList = map (\x -> if x then 1/fromIntegral numWinners else 0)
 simulate :: (RandomSource m DevRandom, PrimMonad m) => Game -> m [([Card], HandRank)]
 simulate game = do
   cards <- runRVar (playerHands game) DevRandom
-  scores <- mapM evaluate' cards
+  let scores = map evaluate' cards
   return $ zip cards scores
   where evaluate' [c1, c2, c3, c4, c5, c6, c7] = evaluate c1 c2 c3 c4 c5 c6 c7
         evaluate' _                            = undefined

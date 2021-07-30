@@ -1,6 +1,6 @@
 module Main (main) where
 
-import Lib
+
 import Holdem
 import Card
 import Holdem.Evaluate
@@ -33,8 +33,8 @@ game1 = Game
       ]
   }
 -- foo :: (Card, Card, Card, Card, Card, Card, Card) -> IO Int
-foo :: (Int, Int, Int, Int, Int, Int, Int) -> IO Int
-foo (c1, c2, c3, c4, c5, c6, c7) = coerce <$> evaluate' c1 c2 c3 c4 c5 c6 c7
+foo :: (Int, Int, Int, Int, Int, Int, Int) -> Int
+foo (c1, c2, c3, c4, c5, c6, c7) = coerce $ evaluate' c1 c2 c3 c4 c5 c6 c7
 main :: IO ()
 main = do
   -- print (length cards)
@@ -45,7 +45,7 @@ main = do
   -- result <- mapM foo cards
   -- result <- mapM foo cards:: IO [Int]
   --print (sum result)
-   x <- S.sum (S.mapM foo (S.each cards))
+   x <- S.sum (S.map foo (S.each cards))
    print x
 
 
