@@ -2,13 +2,15 @@ module Holdem.Table.Suit
   (
     suitsLookup
   ) where
-import qualified Data.Vector.Unboxed as V
+
+import qualified Data.Array.Unboxed as Array
+import Data.Array.Base (unsafeAt)
 
 suitsLookup :: Int -> Int
-suitsLookup i = suits V.! i
+suitsLookup i = suits `unsafeAt` i
 
-suits :: V.Vector Int
-suits = V.fromList [
+suits :: Array.UArray Int Int
+suits = Array.listArray (0, 4608) [
   0,  0,  0,  0,  0,  1,  1,  1,
   1,  1,  0,  0,  0,  1,  1,  1,
   1,  0,  0,  0,  0,  1,  1,  1,

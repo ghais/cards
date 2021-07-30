@@ -1,4 +1,4 @@
-cabal-version: 1.12
+cabal-version: 2.4
 
 -- This file has been generated from package.yaml by hpack version 0.34.4.
 --
@@ -12,7 +12,7 @@ bug-reports:    https://github.com/githubuser/cards/issues
 author:         Author name here
 maintainer:     example@example.com
 copyright:      2021 Author name here
-license:        BSD3
+license:        MIT
 license-file:   LICENSE
 build-type:     Simple
 extra-source-files:
@@ -23,7 +23,45 @@ source-repository head
   type: git
   location: https://github.com/githubuser/cards
 
+common common-options
+  build-depends:       base >= 4.11.0 && < 5
+  ghc-options:         -Wall
+                       -Wcompat
+                       -Widentities
+                       -Wincomplete-uni-patterns
+                       -Wincomplete-record-updates
+  if impl(ghc >= 8.0)
+    ghc-options:       -Wredundant-constraints
+  if impl(ghc >= 8.2)
+    ghc-options:       -fhide-source-paths
+  if impl(ghc >= 8.4)
+    ghc-options:       -Wmissing-export-lists
+                       -Wpartial-fields
+  if impl(ghc >= 8.8)
+    ghc-options:       -Wmissing-deriving-strategies
+
+  default-language:    Haskell2010
+  default-extensions:  ConstraintKinds
+                       DeriveGeneric
+                       DerivingStrategies
+                       FlexibleInstances
+                       GeneralizedNewtypeDeriving
+                       InstanceSigs
+                       KindSignatures
+                       LambdaCase
+                       MultiParamTypeClasses
+                       OverloadedStrings
+                       RecordWildCards
+                       ScopedTypeVariables
+                       StandaloneDeriving
+                       TupleSections
+                       TypeApplications
+                       ViewPatterns
+                       FlexibleInstances
+                       FlexibleContexts
+
 library
+  import:  common-options
   exposed-modules:
       Card
       Holdem
@@ -38,85 +76,60 @@ library
       Paths_cards
   hs-source-dirs:
       src
-  default-extensions:
-      ConstraintKinds
-      DeriveGeneric
-      DerivingStrategies
-      GeneralizedNewtypeDeriving
-      InstanceSigs
-      KindSignatures
-      LambdaCase
-      OverloadedStrings
-      RecordWildCards
-      ScopedTypeVariables
-      StandaloneDeriving
-      TupleSections
-      TypeApplications
-      ViewPatterns
-  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-uni-patterns -Wincomplete-record-updates -Wredundant-constraints -Wmissing-export-lists -Wpartial-fields -Wmissing-deriving-strategies -Wunused-packages -fhide-source-paths -freverse-errors
   build-depends:
-      base >=4.7 && <5
-    , binary >=0.8
+      binary >=0.8
     , mtl >=2.2
     , primitive >=0.7
     , random-fu >=0.2.7
     , random-source >=0.3
     , rvar >=0.2
     , vector >=0.12
+    , array >= 0.5
   default-language: Haskell2010
 
 executable cards-exe
+  import:  common-options
   main-is: Main.hs
   other-modules:
       Paths_cards
   hs-source-dirs:
-      app
-  default-extensions:
-      ConstraintKinds
-      DeriveGeneric
-      DerivingStrategies
-      GeneralizedNewtypeDeriving
-      InstanceSigs
-      KindSignatures
-      LambdaCase
-      OverloadedStrings
-      RecordWildCards
-      ScopedTypeVariables
-      StandaloneDeriving
-      TupleSections
-      TypeApplications
-      ViewPatterns
-  ghc-options: -threaded -rtsopts -with-rtsopts=-N -Wall -Wcompat -Widentities -Wincomplete-uni-patterns -Wincomplete-record-updates -Wredundant-constraints -Wmissing-export-lists -Wpartial-fields -Wmissing-deriving-strategies -Wunused-packages -fhide-source-paths -freverse-errors
+      app  
   build-depends:
-      base >=4.7 && <5
-    , cards
+      cards
     , random-fu >=0.2.7
+    , streaming
   default-language: Haskell2010
+  ghc-options:
+              -threaded
+              -rtsopts
+              -with-rtsopts=-N
 
 test-suite cards-test
+  import:    common-options
   type: exitcode-stdio-1.0
   main-is: Spec.hs
   other-modules:
       Paths_cards
   hs-source-dirs:
       test
-  default-extensions:
-      ConstraintKinds
-      DeriveGeneric
-      DerivingStrategies
-      GeneralizedNewtypeDeriving
-      InstanceSigs
-      KindSignatures
-      LambdaCase
-      OverloadedStrings
-      RecordWildCards
-      ScopedTypeVariables
-      StandaloneDeriving
-      TupleSections
-      TypeApplications
-      ViewPatterns
-  ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       base >=4.7 && <5
     , cards
+    , hspec >= 2.7 && < 3
   default-language: Haskell2010
+  ghc-options:
+              -threaded
+              -rtsopts
+              -with-rtsopts=-N
+
+benchmark cards-benchmark
+  import:              common-options
+  type:                exitcode-stdio-1.0
+  hs-source-dirs:      benchmark
+  main-is:             Main.hs
+  build-depends:       cards
+                     , gauge
+  ghc-options:         -threaded
+                       -rtsopts
+                       -with-rtsopts=-N
+                       -O2

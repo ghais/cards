@@ -2,13 +2,15 @@ module Holdem.Table.Flush
   (
     flushLookup
   ) where
-import qualified Data.Vector.Unboxed as V
+
+import qualified Data.Array.Unboxed as Array
+import Data.Array.Base (unsafeAt)
 
 flushLookup :: Int -> Int
-flushLookup i = flushTable V.! i
+flushLookup i = flushTable `unsafeAt` i
 
-flushTable :: V.Vector Int
-flushTable = V.fromList [
+flushTable :: Array.UArray Int Int
+flushTable = Array.listArray (0, 8191)  [
   0,  0,  0,  0,  0,  0,  0,  0,
   0,  0,  0,  0,  0,  0,  0,  0,
   0,  0,  0,  0,  0,  0,  0,  0,

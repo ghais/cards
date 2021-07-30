@@ -17,9 +17,7 @@
 #
 # resolver: ./custom-snapshot.yaml
 # resolver: https://example.com/snapshots/2018-01-01.yaml
-resolver:
-  url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/18/0.yaml
-
+resolver: lts-18.1
 # User packages to be built.
 # Various formats can be used as shown in the example below.
 #
@@ -35,7 +33,14 @@ packages:
 # These entries can reference officially published versions as well as
 # forks / in-progress versions pinned to a git hash. For example:
 #
-# extra-deps:
+#extra-deps:
+#  - random-fu-0.2.7.7@sha256:55c62bc8e7a2970d4706f50b391559594ef1a8b5e71c0fbd2c9e30d5adafb9ab,4612
+#  - random-source-0.3.0.11@sha256:f78e361474d648fb0e0112d895c3a4bca80b1e565b778d763d59614270e8779c,3132
+#  - rvar-0.2.0.6@sha256:d07cbb734ec307539fb58d4344b2284a1a91f41c9308f437c27ae8bada2111bf,2317
+#  - flexible-defaults-0.0.3@sha256:6a7ab000561e1075003cb1053dfbbb4020ae2b02916776d1479c9c3fc82f5d0d,2508
+#  - th-extras-0.0.0.4@sha256:2f408c0f427530f36beb19c733a7a57f67b727713f9bb942b64f3b2e0e2932bf,1457
+
+
 # - acme-missiles-0.3
 # - git: https://github.com/commercialhaskell/stack.git
 #   commit: e7b331f14bcffb8367cd58fbfc8b40ec7642100a

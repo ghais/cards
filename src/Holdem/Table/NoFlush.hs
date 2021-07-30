@@ -3,13 +3,14 @@ module Holdem.Table.NoFlush
     noFlushLookup
   ) where
 
-import qualified Data.Vector.Unboxed as V
+import qualified Data.Array.Unboxed as Array
+import Data.Array.Base (unsafeAt)
 
 noFlushLookup :: Int -> Int
-noFlushLookup i = noflush V.! i
+noFlushLookup i = noflush `unsafeAt` i
 
-noflush :: V.Vector Int
-noflush = V.fromList [
+noflush :: Array.UArray Int Int
+noflush = Array.listArray (0, 49204) [
   11,  23,  11,  167,  23,  11,  167,  179,
   23,  12,  168,  191,  180,  24,  35,  35,
   35,  36,  11,  167,  23,  11,  167,  179,

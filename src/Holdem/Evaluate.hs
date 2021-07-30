@@ -1,33 +1,85 @@
+{-# LANGUAGE DerivingVia #-}
 module Holdem.Evaluate
-  ( evaluate,
-    evaluateHand,
+  (
+    HandRank(..)
+  , evaluate
+  , evaluate'
+  , evaluateHand
   )
 where
 
-import Card
-import Control.Monad.Primitive (PrimMonad)
-import Data.Bits (shift, (.&.), (.|.))
+import           Card
+import           Control.Monad.Primitive (PrimMonad)
+import           Data.Bits (shift, (.&.), (.|.))
+import           Data.Ord
 import qualified Data.Vector.Unboxed as V
 import qualified Data.Vector.Unboxed.Mutable as MV
-import Holdem
+import qualified Data.Array.Unboxed as Array
+import           Holdem
 import qualified Holdem.Table.DP as Holdem
 import qualified Holdem.Table.Flush as Holdem
 import qualified Holdem.Table.NoFlush as Holdem
 import qualified Holdem.Table.Suit as Holdem
+import Data.Array.Base (unsafeAt)
 
-evaluateHand :: (PrimMonad m) => Hand -> m Int
+
+-- | Rank of a hand.
+newtype HandRank = HandRank Int deriving newtype (Eq, Show, Read)
+                                deriving newtype (Num)
+                                deriving Ord via (Down Int)
+
+-- | Evaluate a 7-card Texas Hold'em hand returning the rank of the hand.
+evaluateHand :: (PrimMonad m) => Hand -> m HandRank
 evaluateHand (Hand (Hole c1 c2) (Community (Flop c3 c4 c5) (Turn c6) (Street c7))) =
-  evaluate [c1, c2, c3, c4, c5, c6, c7]
+  evaluate c1 c2 c3 c4 c5 c6 c7
 
-evaluate :: PrimMonad m => [Card] -> m Int
-evaluate [Card c1, Card c2, Card c3, Card c4, Card c5, Card c6, Card c7] =
-  if Holdem.suitsLookup suitHash > 0
-    then handleFlush c1 c2 c3 c4 c5 c5 c7 suitHash
-    else handleNonFlush c1 c2 c3 c4 c5 c6 c7
+-- | Evaluate a 7-card hand and return the rank of that hand.
+evaluate :: PrimMonad m =>
+     Card  -- ^ c1
+  -> Card  -- ^ c2
+  -> Card  -- ^ c3
+  -> Card  -- ^ c4
+  -> Card  -- ^ c5
+  -> Card  -- ^ c6
+  -> Card  -- ^ c7
+  -> m HandRank -- ^ The rank of the hand.
+evaluate (Card c1) (Card c2) (Card c3) (Card c4) (Card c5) (Card c6) (Card c7) =
+  if Holdem.suitsLookup hash > 0 then
+    HandRank <$> handleFlush c1 c2 c3 c4 c5 c5 c7 hash
+  else
+    HandRank <$> handleNonFlush c1 c2 c3 c4 c5 c6 c7
+  where hash = suitHash c1 c2 c3 c4 c5 c6 c7
+    
+
+
+-- | Evaluate a 7-card hand and return the rank of that hand.
+evaluate' :: PrimMonad m =>
+     Int  -- ^ c1
+  -> Int  -- ^ c2
+  -> Int  -- ^ c3
+  -> Int  -- ^ c4
+  -> Int  -- ^ c5
+  -> Int  -- ^ c6
+  -> Int  -- ^ c7
+  -> m HandRank -- ^ The rank of the hand.
+evaluate' c1 c2 c3 c4 c5 c6 c7 =
+  if Holdem.suitsLookup hash > 0 then
+    HandRank <$> handleFlush c1 c2 c3 c4 c5 c5 c7 hash
+  else
+    HandRank <$> handleNonFlush c1 c2 c3 c4 c5 c6 c7
   where
-    suitHash :: Int
-    suitHash = sum $ map (suitBit V.!) cards
-    cards = [c1, c2, c3, c4, c5, c6, c7]
+    hash = suitHash c1 c2 c3 c4 c5 c6 c7
+
+suitHash :: Int -> Int -> Int -> Int -> Int -> Int -> Int -> Int
+suitHash c1 c2 c3 c4 c5 c6 c7 =
+  let b1 = suitBit `unsafeAt` c1
+      b2 = suitBit `unsafeAt` c2
+      b3 = suitBit `unsafeAt` c3
+      b4 = suitBit `unsafeAt` c4
+      b5 = suitBit `unsafeAt` c5
+      b6 = suitBit `unsafeAt` c6
+      b7 = suitBit `unsafeAt` c7
+  in b1 + b2 + b3 + b4 + b5 + b6 + b7
 
 hashQuinary :: V.Vector Int -> Int
 hashQuinary q = go 7 0 0
@@ -37,60 +89,39 @@ hashQuinary q = go 7 0 0
       | k <= 0 = s
       | otherwise =
         let sum' = s + Holdem.dpLookup q i k
-            k' = k - (q V.! i)
+            k' = k - (q `V.unsafeIndex` i)
             i' = i + 1
          in go k' i' sum'
 
 handleFlush :: PrimMonad m => Int -> Int -> Int -> Int -> Int -> Int -> Int -> Int -> m Int
-handleFlush c1 c2 c3 c4 c5 c6 c7 suitHash = do
+handleFlush c1 c2 c3 c4 c5 c6 c7 hash = do
   suitBinary <- MV.replicate 4 0
-  MV.modify suitBinary (\x -> x .|. rankBit V.! c1) (c1 .&. 0x3)
-  MV.modify suitBinary (\x -> x .|. rankBit V.! c2) (c2 .&. 0x3)
-  MV.modify suitBinary (\x -> x .|. rankBit V.! c3) (c3 .&. 0x3)
-  MV.modify suitBinary (\x -> x .|. rankBit V.! c4) (c4 .&. 0x3)
-  MV.modify suitBinary (\x -> x .|. rankBit V.! c5) (c5 .&. 0x3)
-  MV.modify suitBinary (\x -> x .|. rankBit V.! c6) (c6 .&. 0x3)
-  MV.modify suitBinary (\x -> x .|. rankBit V.! c7) (c7 .&. 0x3)
-  idx <- MV.read suitBinary (Holdem.suitsLookup suitHash - 1)
+  MV.unsafeModify suitBinary (\x -> x .|. rankBit `unsafeAt` c1) (c1 .&. 0x3)
+  MV.unsafeModify suitBinary (\x -> x .|. rankBit `unsafeAt` c2) (c2 .&. 0x3)
+  MV.unsafeModify suitBinary (\x -> x .|. rankBit `unsafeAt` c3) (c3 .&. 0x3)
+  MV.unsafeModify suitBinary (\x -> x .|. rankBit `unsafeAt` c4) (c4 .&. 0x3)
+  MV.unsafeModify suitBinary (\x -> x .|. rankBit `unsafeAt` c5) (c5 .&. 0x3)
+  MV.unsafeModify suitBinary (\x -> x .|. rankBit `unsafeAt` c6) (c6 .&. 0x3)
+  MV.unsafeModify suitBinary (\x -> x .|. rankBit `unsafeAt` c7) (c7 .&. 0x3)
+  idx <- MV.read suitBinary (Holdem.suitsLookup hash - 1)
   return $ Holdem.flushLookup idx
 
 handleNonFlush :: PrimMonad m => Int -> Int -> Int -> Int -> Int -> Int -> Int -> m Int
 handleNonFlush c1 c2 c3 c4 c5 c6 c7 = do
   quinary <- MV.replicate 13 0
-  MV.modify quinary (+ 1) (c1 `shift` (-2))
-  MV.modify quinary (+ 1) (c2 `shift` (-2))
-  MV.modify quinary (+ 1) (c3 `shift` (-2))
-  MV.modify quinary (+ 1) (c4 `shift` (-2))
-  MV.modify quinary (+ 1) (c5 `shift` (-2))
-  MV.modify quinary (+ 1) (c6 `shift` (-2))
-  MV.modify quinary (+ 1) (c7 `shift` (-2))
+  MV.unsafeModify quinary (+ 1) (c1 `shift` (-2))
+  MV.unsafeModify quinary (+ 1) (c2 `shift` (-2))
+  MV.unsafeModify quinary (+ 1) (c3 `shift` (-2))
+  MV.unsafeModify quinary (+ 1) (c4 `shift` (-2))
+  MV.unsafeModify quinary (+ 1) (c5 `shift` (-2))
+  MV.unsafeModify quinary (+ 1) (c6 `shift` (-2))
+  MV.unsafeModify quinary (+ 1) (c7 `shift` (-2))
   hash <- hashQuinary <$> V.freeze quinary
   return $ Holdem.noFlushLookup hash
 
-choose :: Int -> Int -> Int
-choose = loop 1 1
-  where
-    loop rn rd _ 0 = rn `div` rd
-    loop _ _ 0 _ = 0
-    loop rn rd n k = loop (rn * n) (rd * k) (n -1) (k -1)
 
-hashBinary ::
-  [Bool] ->
-  Int ->
-  Int ->
-  Int
-hashBinary q n k = go q n k 0
-  where
-    go :: [Bool] -> Int -> Int -> Int -> Int
-    go (x : xs) n' k' s =
-      if x
-        then go xs (n' -1) (k' -1) (s + ((n' -1) `choose` k'))
-        else go xs (n' - 1) k' s
-    go [] _ _ s = s
-
-rankBit :: V.Vector Int
-rankBit =
-  V.fromList
+rankBit :: Array.UArray Int Int
+rankBit = Array.listArray (0, 51)
     [ 0x1,
       0x1,
       0x1,
@@ -145,9 +176,9 @@ rankBit =
       0x1000
     ]
 
-suitBit :: V.Vector Int
+suitBit :: Array.UArray Int Int
 suitBit =
-  V.fromList
+  Array.listArray (0,51)
     [ 0x1,
       0x8,
       0x40,

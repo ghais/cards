@@ -1,17 +1,15 @@
-{-# LANGUAGE FlexibleContexts #-}
-
 module Lib  where
-import           Card
-import           Control.Monad
-import           Data.Random
-import           Holdem
+import           Card (Card, Deck, remove, shuffle, stdDeck)
+import           Control.Monad (replicateM)
+import           Data.Random (RVar, RandomSource, runRVar)
+import           Holdem (Game, completeHands, dealtCards)
 
-import           Control.Monad.Primitive
-import           Control.Monad.State
-import           Data.List
-import           Data.Ord
-import           Data.Random.Source.DevRandom
-import           Holdem.Evaluate
+import           Control.Monad.Primitive (PrimMonad)
+import           Control.Monad.State (evalStateT)
+import  Data.List (transpose)
+
+import           Data.Random.Source.DevRandom (DevRandom (DevRandom))
+import           Holdem.Evaluate (HandRank, evaluate)
 
 
 
@@ -22,43 +20,42 @@ playerHands game = do
     (Just cards) -> return cards
     _            -> return []
 
-gameDeck game = remove (collectDealtCards game) fullDeck
+gameDeck :: Game -> Deck
+gameDeck game = remove (dealtCards game) stdDeck
 
 
 
-
-minIndex :: (Ord a) => [a] -> Int
-minIndex = fst . minimumBy (comparing snd) . zip [0..]
-
-winners :: [Int] -> [Bool]
+winners :: [HandRank] -> [Bool]
 winners scores = map (== minRank) scores where
-  minRank = minimum scores
+  minRank = maximum scores
 
-averageScore :: Int -> [Bool] -> [Double]
-averageScore numPlayers winnerList = map (\x -> if x then 1/fromIntegral numWinners else 0) winnerList where
-  numWinners = length (filter (== True) winnerList) 
+averageScore :: [Bool] -> [Double]
+averageScore winnerList = map (\x -> if x then 1/fromIntegral numWinners else 0) winnerList where
+  numWinners = length (filter (== True) winnerList)
 
 
-simulate :: (RandomSource m DevRandom, PrimMonad m) => Game -> m [([Card], Int)]
+simulate :: (RandomSource m DevRandom, PrimMonad m) => Game -> m [([Card], HandRank)]
 simulate game = do
   cards <- runRVar (playerHands game) DevRandom
-  scores <- mapM evaluate cards
+  scores <- mapM evaluate' cards
   return $ zip cards scores
+  where evaluate' [c1, c2, c3, c4, c5, c6, c7] = evaluate c1 c2 c3 c4 c5 c6 c7
+        evaluate' _                            = undefined
 
 simulateWinners :: (RandomSource m DevRandom, PrimMonad m) => Game -> m [Double]
-simulateWinners game@Game{..} = do
+simulateWinners game = do
   scores <- map snd <$> simulate game
   let gameWinners = winners scores
-  return $ averageScore numPlayers gameWinners
+  return $ averageScore gameWinners
 
 
 
 play :: (RandomSource m DevRandom, PrimMonad m) => Game -> Int -> m [Double]
-play game@Game{..} n = do
+play game n = do
   gameHands <- replicateM n $ simulateWinners game
   --result <- map (map evaluate7Cards) myhands
   --return result
-  return $ map (/fromIntegral n) (map sum (transpose gameHands))
+  return $ map ((/fromIntegral n) . sum) (transpose gameHands)
 
 
 

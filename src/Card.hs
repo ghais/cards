@@ -2,15 +2,31 @@
 -- Module      : Card
 -- Description : the module provides fundamental operations to a deck of cards.
 -- Copyright   : (c) Ghais Issa, 2021
-module Card where
+module Card
+  (
+    Suit(..)
+  , Rank(..)
+  , Card(..)
+  , newCard
+  , randomCard
+  , Deck(..)
+  , stdDeck
+  , shuffleT
+  , shuffle
+  , draw
+  , draw_
+  , draw1
+  , draw1_
+  , remove
+  ) where
 
-import Data.Bits (shift, (.&.))
-import Data.List (foldl1', (\\))
-import Data.Random (RVar)
-import Data.Random.List (shuffleN, shuffleNT)
-import Text.Read (Lexeme (Ident), Read (readPrec), lexP)
-import Data.Random.RVar (RVarT)
-import Data.Random.Distribution.Uniform (uniform)
+import           Data.Bits (shift, (.&.))
+import           Data.List (foldl1', (\\))
+import           Data.Random (RVar)
+import           Data.Random.Distribution.Uniform (uniform)
+import           Data.Random.List (shuffleN, shuffleNT)
+import           Data.Random.RVar (RVarT)
+import           Text.Read (Lexeme (Ident), Read (readPrec), lexP)
 
 data Suit
   = Club
@@ -48,20 +64,21 @@ newCard rank suite = Card $ fromEnum rank * 4 + fromEnum suite
 
 randomCard :: RVar Card
 randomCard = do
-  suit <- uniform 0 3
-  rank  <- uniform 0 12
+  suit   <- uniform 0 3
+  rank   <- uniform 0 12
   return $ newCard (toEnum rank) (toEnum suit)
 
 
 data Deck = Deck !Int ![Card]
 
 -- | construct a full 52-card playing deck. The resulting deck is not shuffled.
-fullDeck :: Deck
-fullDeck =
+stdDeck :: Deck
+stdDeck =
   let suits = enumFrom Club
       ranks = enumFrom Two
    in Deck 52 [newCard rank suit | suit <- suits, rank <- ranks]
 
+-- | Shuffle a deck.
 shuffleT :: Deck -> RVarT m Deck
 shuffleT (Deck n cards) = do
   shuffledCards <- shuffleNT n cards
@@ -108,29 +125,35 @@ draw handSizeLst (Deck n deck)
               newDeck = drop nToTake deckOutput
            in draw2 hst (newHand : handOutput, newDeck)
         (hands, remainder) = draw2 handSizeLst ([], deck)
-     in Just (hands, (Deck (n - total) remainder))
+     in Just (hands, Deck (n - total) remainder)
   where
     total = foldl1' (+) handSizeLst
 
 
+-- | Just like 'draw' but throws away the deck.
 draw_ :: [Int] -> Deck -> Maybe [[Card]]
 draw_ handSizes (Deck n deck) =
   let f (Just (h, _)) = Just h
-      f _ = Nothing
+      f _             = Nothing
    in f $ draw handSizes (Deck n deck)
 
+-- | The same as 'draw', except draw only one hand of specified size.
 draw1 :: Int -> Deck -> Maybe ([Card], Deck)
 draw1 handSize (Deck n deck) =
   let f (Just ([h], d)) = Just (h, d)
-      f _ = Nothing
+      f _               = Nothing
    in f $ draw [handSize] (Deck n deck)
 
+-- | Same as 'draw1' but throws away the deck.
 draw1_ :: Int -> Deck -> Maybe [Card]
 draw1_ handSize (Deck n deck) =
   let f (Just ([h], _)) = Just h
-      f _ = Nothing
+      f _               = Nothing
    in f $ draw [handSize] (Deck n deck)
 
+
+
+-- A card is represented as an Int. So we implement Show and Read explicitly.
 instance Show Card where
   show (Card c) = show rank ++ " " ++ show suit
     where

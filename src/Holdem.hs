@@ -1,23 +1,41 @@
-{-# LANGUAGE DerivingStrategies #-}
-
-module Holdem where
+module Holdem
+  (
+    Hole(..)
+  , Flop(..)
+  , Turn(..)
+  , Street(..)
+  , Community(..)
+  , Hand(..)
+  , Player(..)
+  , Game(..)
+  , dealtCards
+  , completeHands
+  ) where
 
 import           Card
 import           Control.Monad.State
 
 
+-- | Player's 2 cards.
 data Hole = Hole !Card !Card deriving stock (Show, Eq)
 
+-- | First three community cards
 data Flop = Flop !Card !Card !Card deriving stock (Show, Eq)
 
+-- | Fourth community card.
 newtype Turn = Turn Card deriving stock (Show, Eq)
 
+-- | Fifth and last community card.
 newtype Street = Street Card deriving stock (Show, Eq)
 
+-- | All community cards.
 data Community = Community !Flop !Turn !Street deriving stock (Show, Eq)
 
+-- | A 7-card hand is made from a hole and community cards.
 data Hand = Hand !Hole !Community deriving stock (Show, Eq)
 
+
+-- | 
 data Player = Player
   {
     card1 :: Maybe Card
@@ -25,6 +43,7 @@ data Player = Player
   }
 
 -- | An abstraction that represents a poker game, with some unknowns.
+--This allows us to simulate a game from any possible state.
 data Game = Game
   { numPlayers :: Int           -- ^ Number of players in the game.
   , players    :: [Player]      -- ^ Other players.
@@ -33,21 +52,24 @@ data Game = Game
   , street     :: Maybe Street  -- ^ The street if it happened. Nothing otherwise.
   }
 
-collectDealtCards Game{..} = let playerCards = (concatMap dealtHands players)
-                                 dealtHands (Player Nothing Nothing) = []
-                                 dealtHands (Player (Just c1) Nothing) = [c1]
-                                 dealtHands (Player Nothing (Just c2)) = [c2]
-                                 dealtHands (Player (Just c1) (Just c2)) = [c1, c2]
-                                 flopCards = case flop of
-                                   (Just (Flop c1 c2 c3)) -> [c1, c2, c3]
-                                   _ -> []
-                                 turnCard = case turn of
-                                   (Just (Turn c)) -> [c]
-                                   _ -> []
-                                 streetCard = case street of
-                                   (Just (Street c)) -> [c]
-                                   _ -> []
-                             in playerCards ++  flopCards ++ turnCard ++ streetCard
+
+
+dealtCards :: Game -> [Card]
+dealtCards Game{..} = let playerCards = concatMap dealtHands players
+                          dealtHands (Player Nothing Nothing)     = []
+                          dealtHands (Player (Just c1) Nothing)   = [c1]
+                          dealtHands (Player Nothing (Just c2))   = [c2]
+                          dealtHands (Player (Just c1) (Just c2)) = [c1, c2]
+                          flopCards = case flop of
+                            (Just (Flop c1 c2 c3)) -> [c1, c2, c3]
+                            _                      -> []
+                          turnCard = case turn of
+                            (Just (Turn c)) -> [c]
+                            _               -> []
+                          streetCard = case street of
+                            (Just (Street c)) -> [c]
+                            _                 -> []
+                      in playerCards ++  flopCards ++ turnCard ++ streetCard
 
 completeHands :: Game -> StateT Deck Maybe [[Card]]
 completeHands Game{..} = do
