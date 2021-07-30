@@ -4,9 +4,8 @@ import           Control.Monad (replicateM)
 import           Data.Random (RVar, RandomSource, runRVar)
 import           Holdem (Game, completeHands, dealtCards)
 
-import           Control.Monad.Primitive (PrimMonad)
 import           Control.Monad.State (evalStateT)
-import  Data.List (transpose)
+import           Data.List (transpose)
 
 import           Data.Random.Source.DevRandom (DevRandom (DevRandom))
 import           Holdem.Evaluate (HandRank, evaluate)
@@ -34,7 +33,7 @@ averageScore winnerList = map (\x -> if x then 1/fromIntegral numWinners else 0)
   numWinners = length (filter (== True) winnerList)
 
 
-simulate :: (RandomSource m DevRandom, PrimMonad m) => Game -> m [([Card], HandRank)]
+simulate :: (RandomSource m DevRandom) => Game -> m [([Card], HandRank)]
 simulate game = do
   cards <- runRVar (playerHands game) DevRandom
   let scores = map evaluate' cards
@@ -42,7 +41,7 @@ simulate game = do
   where evaluate' [c1, c2, c3, c4, c5, c6, c7] = evaluate c1 c2 c3 c4 c5 c6 c7
         evaluate' _                            = undefined
 
-simulateWinners :: (RandomSource m DevRandom, PrimMonad m) => Game -> m [Double]
+simulateWinners :: (RandomSource m DevRandom) => Game -> m [Double]
 simulateWinners game = do
   scores <- map snd <$> simulate game
   let gameWinners = winners scores
@@ -50,7 +49,7 @@ simulateWinners game = do
 
 
 
-play :: (RandomSource m DevRandom, PrimMonad m) => Game -> Int -> m [Double]
+play :: (RandomSource m DevRandom) => Game -> Int -> m [Double]
 play game n = do
   gameHands <- replicateM n $ simulateWinners game
   --result <- map (map evaluate7Cards) myhands

@@ -3,27 +3,25 @@ module Holdem.Evaluate
   (
     HandRank(..)
   , evaluate
-  , evaluate'
   , evaluateHand
   )
 where
 
 import           Card
-import           Control.Monad.Primitive (PrimMonad)
+import           Data.Array.Base (unsafeAccumArray, unsafeAt)
+import qualified Data.Array.Unboxed as Array
 import           Data.Bits (shift, (.&.), (.|.))
 import           Data.Ord
-
-import qualified Data.Vector.Unboxed.Mutable as MV
-import qualified Data.Array.Unboxed as Array
 import           Holdem
 import qualified Holdem.Table.DP as Holdem
 import qualified Holdem.Table.Flush as Holdem
 import qualified Holdem.Table.NoFlush as Holdem
 import qualified Holdem.Table.Suit as Holdem
-import Data.Array.Base (unsafeAt, unsafeAccumArray)
 
 
 -- | Rank of a hand.
+--
+-- if @(evaluate hand1) > (evaluate hand2)@ then hand1 is better than hand2
 newtype HandRank = HandRank Int deriving newtype (Eq, Show, Read)
                                 deriving newtype (Num)
                                 deriving Ord via (Down Int)
@@ -45,26 +43,7 @@ evaluate ::
   -> HandRank -- ^ The rank of the hand.
 evaluate (Card c1) (Card c2) (Card c3) (Card c4) (Card c5) (Card c6) (Card c7) =
   if Holdem.suitsLookup hash > 0 then
-    HandRank $ handleFlush2 c1 c2 c3 c4 c5 c5 c7 hash
-  else
-    HandRank $ handleNonFlush c1 c2 c3 c4 c5 c6 c7
-  where hash = suitHash c1 c2 c3 c4 c5 c6 c7
-
-
-
--- | Evaluate a 7-card hand and return the rank of that hand.
-evaluate' ::
-     Int  -- ^ c1
-  -> Int  -- ^ c2
-  -> Int  -- ^ c3
-  -> Int  -- ^ c4
-  -> Int  -- ^ c5
-  -> Int  -- ^ c6
-  -> Int  -- ^ c7
-  -> HandRank -- ^ The rank of the hand.
-evaluate' c1 c2 c3 c4 c5 c6 c7 =
-  if Holdem.suitsLookup hash > 0 then
-    HandRank $ handleFlush2 c1 c2 c3 c4 c5 c5 c7 hash
+    HandRank $ handleFlush c1 c2 c3 c4 c5 c6 c7 hash
   else
     HandRank $ handleNonFlush c1 c2 c3 c4 c5 c6 c7
   where
@@ -94,21 +73,8 @@ hashQuinary q = go 7 0 0
             i' = i + 1
          in go k' i' sum'
 
-handleFlush :: PrimMonad m => Int -> Int -> Int -> Int -> Int -> Int -> Int -> Int -> m Int
-handleFlush c1 c2 c3 c4 c5 c6 c7 hash = do
-  suitBinary <- MV.replicate 4 0
-  MV.unsafeModify suitBinary (\x -> x .|. rankBit `unsafeAt` c1) (c1 .&. 0x3)
-  MV.unsafeModify suitBinary (\x -> x .|. rankBit `unsafeAt` c2) (c2 .&. 0x3)
-  MV.unsafeModify suitBinary (\x -> x .|. rankBit `unsafeAt` c3) (c3 .&. 0x3)
-  MV.unsafeModify suitBinary (\x -> x .|. rankBit `unsafeAt` c4) (c4 .&. 0x3)
-  MV.unsafeModify suitBinary (\x -> x .|. rankBit `unsafeAt` c5) (c5 .&. 0x3)
-  MV.unsafeModify suitBinary (\x -> x .|. rankBit `unsafeAt` c6) (c6 .&. 0x3)
-  MV.unsafeModify suitBinary (\x -> x .|. rankBit `unsafeAt` c7) (c7 .&. 0x3)
-  idx <- MV.read suitBinary (Holdem.suitsLookup hash - 1)
-  return $ Holdem.flushLookup idx
-
-handleFlush2 :: Int -> Int -> Int -> Int -> Int -> Int -> Int -> Int -> Int
-handleFlush2 c1 c2 c3 c4 c5 c6 c7 hash =
+handleFlush :: Int -> Int -> Int -> Int -> Int -> Int -> Int -> Int -> Int
+handleFlush c1 c2 c3 c4 c5 c6 c7 hash =
   let
     suitBinary :: Array.UArray Int Int
     suitBinary = unsafeAccumArray (.|.) 0 (0, 3) [
@@ -143,124 +109,35 @@ handleNonFlush c1 c2 c3 c4 c5 c6 c7 =
 
 rankBit :: Array.UArray Int Int
 rankBit = Array.listArray (0, 51)
-    [ 0x1,
-      0x1,
-      0x1,
-      0x1,
-      0x2,
-      0x2,
-      0x2,
-      0x2,
-      0x4,
-      0x4,
-      0x4,
-      0x4,
-      0x8,
-      0x8,
-      0x8,
-      0x8,
-      0x10,
-      0x10,
-      0x10,
-      0x10,
-      0x20,
-      0x20,
-      0x20,
-      0x20,
-      0x40,
-      0x40,
-      0x40,
-      0x40,
-      0x80,
-      0x80,
-      0x80,
-      0x80,
-      0x100,
-      0x100,
-      0x100,
-      0x100,
-      0x200,
-      0x200,
-      0x200,
-      0x200,
-      0x400,
-      0x400,
-      0x400,
-      0x400,
-      0x800,
-      0x800,
-      0x800,
-      0x800,
-      0x1000,
-      0x1000,
-      0x1000,
-      0x1000
+    [ 0x1,      0x1,      0x1,      0x1,
+      0x2,      0x2,      0x2,      0x2,
+      0x4,      0x4,      0x4,      0x4,
+      0x8,      0x8,      0x8,      0x8,
+      0x10,     0x10,     0x10,     0x10,
+      0x20,     0x20,     0x20,     0x20,
+      0x40,     0x40,     0x40,     0x40,
+      0x80,     0x80,     0x80,     0x80,
+      0x100,    0x100,    0x100,    0x100,
+      0x200,    0x200,    0x200,    0x200,
+      0x400,    0x400,    0x400,    0x400,
+      0x800,    0x800,    0x800,    0x800,
+      0x1000,   0x1000,   0x1000,    0x1000
     ]
 
 suitBit :: Array.UArray Int Int
 suitBit =
   Array.listArray (0,51)
-    [ 0x1,
-      0x8,
-      0x40,
-      0x200,
-      0x1,
-      0x8,
-      0x40,
-      0x200,
-      0x1,
-      0x8,
-      0x40,
-      0x200,
-      0x1,
-      0x8,
-      0x40,
-      0x200,
-      0x1,
-      0x8,
-      0x40,
-      0x200,
-      0x1,
-      0x8,
-      0x40,
-      0x200,
-      0x1,
-      0x8,
-      0x40,
-      0x200,
-      0x1,
-      0x8,
-      0x40,
-      0x200,
-      0x1,
-      0x8,
-      0x40,
-      0x200,
-      0x1,
-      0x8,
-      0x40,
-      0x200,
-      0x1,
-      0x8,
-      0x40,
-      0x200,
-      0x1,
-      0x8,
-      0x40,
-      0x200,
-      0x1,
-      0x8,
-      0x40,
-      0x200
+    [ 0x1,      0x8,      0x40,      0x200,
+      0x1,      0x8,      0x40,      0x200,
+      0x1,      0x8,      0x40,      0x200,
+      0x1,      0x8,      0x40,      0x200,
+      0x1,      0x8,      0x40,      0x200,
+      0x1,      0x8,      0x40,      0x200,
+      0x1,      0x8,      0x40,      0x200,
+      0x1,      0x8,      0x40,      0x200,
+      0x1,      0x8,      0x40,      0x200,
+      0x1,      0x8,      0x40,      0x200,
+      0x1,      0x8,      0x40,      0x200,
+      0x1,      0x8,      0x40,      0x200,
+      0x1,      0x8,      0x40,      0x200
     ]
-
-foo :: HandRank
-foo = let
-  c1 = newCard Ten Heart
-  c2 = newCard Ace Club
-  c3 = newCard Eight Heart
-  c4 = newCard Nine Heart
-  c5 = newCard Seven Heart
-  c6 = newCard Six Diamond
-  c7 = newCard Two Diamond
-  in evaluate c1 c2 c3 c4 c5 c6 c7
