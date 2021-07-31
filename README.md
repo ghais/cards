@@ -1,5 +1,9 @@
 # cards
 
+[![Haskell CI](https://github.com/ghais/cards/actions/workflows/haskell.yml/badge.svg)](https://github.com/ghais/cards/actions/workflows/haskell.yml)
+[![Build Status](https://travis-ci.com/ghais/cards.svg?branch=main)](https://travis-ci.com/ghais/cards)
+[![MIT license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 Monte Carlo simulator for Texas Hold'em that can simulate each player probability of winning.
 
 The simulation can proceed for any number of known and unknown cards, for example we can run
