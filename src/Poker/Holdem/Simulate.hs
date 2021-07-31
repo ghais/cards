@@ -3,8 +3,9 @@
 -- Description : Monte Carlo simulation of a poker holdem game.
 -- Copyright   : (c) Ghais Issa, 2021
 --
--- 
-
+-- Uses Monte Carlo Methods to determine the probability for each player in a game winning.
+-- The simulation randomize each of the unknown cards in the game, this could include any
+-- number of players' cards as well as flop, turn and river.
 module Poker.Holdem.Simulate
   (
     Player(..)
@@ -19,7 +20,7 @@ import           Data.List (transpose)
 
 import           Data.Random.Source.DevRandom (DevRandom (DevRandom))
 import           Poker.Deck
-import qualified Poker.Deck as Deck(shuffle)
+import qualified Poker.Deck as Deck (shuffle)
 import           Poker.Holdem
 import           Poker.Holdem.Evaluate (HandRank, evaluate)
 
@@ -34,21 +35,22 @@ data Player = Player
 --This allows us to simulate a game from any possible state.
 data Game = Game
   {
-    players    :: [Player]      -- ^ Other players.
-  , flop       :: Maybe Flop    -- ^ The flop if it happened. Nothing otherwise.
-  , turn       :: Maybe Turn    -- ^ The turn if it happened. Nothing otherwise.
-  , street     :: Maybe Street  -- ^ The street if it happened. Nothing otherwise.
+    players :: [Player]      -- ^ Players.
+  , flop    :: Maybe Flop    -- ^ The flop if known. Nothing otherwise.
+  , turn    :: Maybe Turn    -- ^ The turn if known. Nothing otherwise.
+  , street  :: Maybe Street  -- ^ The street if known. Nothing otherwise.
   }
 
 -- | Run a Monte Carlo simulation of a game returning the probability of winning for each player.
-simulate :: (RandomSource m DevRandom) => Game -> Int -> m [Double]
+simulate :: (RandomSource m DevRandom) =>
+   Game         -- ^ State of the game before simulation.
+  -> Int        -- ^ Number of trajectories.
+  -> m [Double] -- ^ Probability for each player winning the game.
 simulate game n = do
   gameHands <- replicateM n $ simulateWinners game
   return $ map ((/fromIntegral n) . sum) (transpose gameHands)
 
-
-
-dealtCards :: Game -> [Card] 
+dealtCards :: Game -> [Card]
 dealtCards Game{..} = let playerCards = concatMap dealtHands players
                           dealtHands (Player Nothing Nothing)     = []
                           dealtHands (Player (Just c1) Nothing)   = [c1]

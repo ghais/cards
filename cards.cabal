@@ -1,27 +1,24 @@
 cabal-version: 2.4
 
--- This file has been generated from package.yaml by hpack version 0.34.4.
---
--- see: https://github.com/sol/hpack
-
 name:           cards
 version:        0.1.0.0
-description:    Please see the README on GitHub at <https://github.com/githubuser/cards#readme>
-homepage:       https://github.com/githubuser/cards#readme
-bug-reports:    https://github.com/githubuser/cards/issues
-author:         Author name here
-maintainer:     example@example.com
-copyright:      2021 Author name here
+description:    Please see the README on GitHub at <https://github.com/ghais/cards#readme>
+homepage:       https://github.com/ghais/cards#readme
+bug-reports:    https://github.com/ghais/cards/issues
+author:         Ghais
+maintainer:     0x47@0x49.dev
+copyright:      2021 Ghaos
 license:        MIT
 license-file:   LICENSE
 build-type:     Simple
 extra-source-files:
     README.md
     ChangeLog.md
+    test/data/evaluate_holdem.csv
 
 source-repository head
   type: git
-  location: https://github.com/githubuser/cards
+  location: https://github.com/ghais/cards
 
 common common-options
   build-depends:       base >= 4.11.0 && < 5
@@ -79,7 +76,6 @@ library
   build-depends:
       binary >=0.8 
     , mtl >=2.2
-    , primitive >=0.7
     , random-fu >=0.2.7
     , random-source >=0.3
     , rvar >=0.2
@@ -97,30 +93,35 @@ executable cards-exe
   build-depends:
       cards
     , random-fu >=0.2.7
-    , streaming
   default-language: Haskell2010
   ghc-options:
               -threaded
               -rtsopts
               -with-rtsopts=-N
 
-test-suite cards-test
-  import:    common-options
+common test-deps
+  build-depends:
+      hspec ^>= 2.7
+    , cards
+  
+test-suite evaluate-test
+  import: common-options, test-deps
   type: exitcode-stdio-1.0
-  main-is: Spec.hs
+  main-is: EvaluateSpec.hs
   other-modules:
       Paths_cards
   hs-source-dirs:
-      test
-  build-depends:
-      base >=4.7 && <5
-    , cards
-    , hspec >= 2.7 && < 3
+      test/evaluate
   default-language: Haskell2010
   ghc-options:
               -threaded
               -rtsopts
               -with-rtsopts=-N
+  build-depends:
+                split >= 0.2.3.4
+
+
+
 
 benchmark cards-benchmark
   import:              common-options
@@ -128,7 +129,7 @@ benchmark cards-benchmark
   hs-source-dirs:      benchmark
   main-is:             Main.hs
   build-depends:       cards
-                     , gauge
+                     , gauge                     
   ghc-options:         -threaded
                        -rtsopts
                        -with-rtsopts=-N

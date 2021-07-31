@@ -1,3 +1,11 @@
+-- |
+-- Module      : Poker.Holdem.Evaluate
+-- Description : Texas Hold'em poker hand evaluator.
+-- Copyright   : (c) Ghais Issa, 2021
+--
+-- A Poker Hand Evaluator based on a perfect hash algorithm based
+-- on the work of Henry Lee. The original CPP implementation can be
+-- found here: [PokerHandEvaluator](https://github.com/HenryRLee/PokerHandEvaluator)
 {-# LANGUAGE DerivingVia #-}
 module Poker.Holdem.Evaluate
   (
