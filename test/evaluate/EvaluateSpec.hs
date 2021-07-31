@@ -25,7 +25,6 @@ test (hand, rank) = do
 
 main = do
   tests <- testTable
-  mapM_ print tests
   hspec $
     describe "Poker.Holdem.Evaluate.evaluate" $ do
       mapM_ test tests
