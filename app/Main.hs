@@ -35,21 +35,23 @@ game1 = Game
 
 foo :: (Card, Card, Card, Card, Card, Card, Card) -> Int
 foo (c1, c2, c3, c4, c5, c6, c7) = coerce $ evaluate c1 c2 c3 c4 c5 c6 c7
-main :: IO ()
-main = do
-  -- print (length cards)
-  --result <- play game1 10000
-  --print result
-  --print (length cards)
-  --result <- sum <$> mapM foo cards
-  -- result <- mapM foo cards
-  -- result <- mapM foo cards:: IO [Int]
-  --print (sum result)
-   --x <- S.sum (S.map foo (S.each cards))
-  let x = map foo cards
-  print (sum x)
-  --print (length x)
+example :: IO ()
+example = do
+  let game = Game
+        {
+          players =
+            [
+              Player (Just $ newCard Ace Heart) (Just $ newCard Ten Diamond )
+            , Player (Just $ newCard Ace Diamond) Nothing
+            , Player Nothing Nothing
+            ]
+        , flop = Just (Flop (newCard King Diamond) (newCard Queen Diamond) (newCard Jack Spade))
+        , turn = Nothing
+        , street = Nothing
+        }
+  probabilities <- simulate game 10000
+  print probabilities
 
 
 
-
+main = example
