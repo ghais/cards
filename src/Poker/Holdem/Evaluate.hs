@@ -1,5 +1,5 @@
 {-# LANGUAGE DerivingVia #-}
-module Holdem.Evaluate
+module Poker.Holdem.Evaluate
   (
     HandRank(..)
   , evaluate
@@ -7,16 +7,16 @@ module Holdem.Evaluate
   )
 where
 
-import           Card
 import           Data.Array.Base (unsafeAccumArray, unsafeAt)
 import qualified Data.Array.Unboxed as Array
 import           Data.Bits (shift, (.&.), (.|.))
 import           Data.Ord
-import           Holdem
-import qualified Holdem.Table.DP as Holdem
-import qualified Holdem.Table.Flush as Holdem
-import qualified Holdem.Table.NoFlush as Holdem
-import qualified Holdem.Table.Suit as Holdem
+import           Poker.Deck
+import           Poker.Holdem
+import qualified Poker.Holdem.Table.DP as Holdem
+import qualified Poker.Holdem.Table.Flush as Holdem
+import qualified Poker.Holdem.Table.NoFlush as Holdem
+import qualified Poker.Holdem.Table.Suit as Holdem
 
 
 -- | Rank of a hand.

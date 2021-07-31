@@ -63,20 +63,21 @@ common common-options
 library
   import:  common-options
   exposed-modules:
-      Card
-      Holdem
-      Holdem.Evaluate
-      Holdem.Table.DP
-      Holdem.Table.Flush
-      Holdem.Table.NoFlush
-      Holdem.Table.Suit
-      Lib
+      Poker.Deck
+      Poker.Holdem
+      Poker.Holdem.Evaluate
+      Poker.Holdem.Simulate
+      Poker.Holdem.Table.DP
+      Poker.Holdem.Table.Flush
+      Poker.Holdem.Table.NoFlush
+      Poker.Holdem.Table.Suit
+      
   other-modules:
       Paths_cards
   hs-source-dirs:
       src
   build-depends:
-      binary >=0.8
+      binary >=0.8 
     , mtl >=2.2
     , primitive >=0.7
     , random-fu >=0.2.7

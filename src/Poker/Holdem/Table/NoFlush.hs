@@ -1,4 +1,4 @@
-module Holdem.Table.NoFlush
+module Poker.Holdem.Table.NoFlush
   (
     noFlushLookup
   ) where

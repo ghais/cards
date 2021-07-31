@@ -1,9 +1,10 @@
 module Main (main) where
 
 
-import Holdem
-import Card
-import Holdem.Evaluate
+import Poker.Holdem
+import Poker.Deck
+import Poker.Holdem.Evaluate
+import Poker.Holdem.Simulate
 
 import Data.Coerce
 
@@ -21,8 +22,7 @@ cards = do
 game1 :: Game
 game1 = Game
   {
-    numPlayers = 4
-  , flop = Just (Flop (newCard King Diamond) (newCard Queen Diamond) (newCard Jack Spade))
+    flop = Just (Flop (newCard King Diamond) (newCard Queen Diamond) (newCard Jack Spade))
   , turn = Nothing
   , street = Nothing
   , players = [

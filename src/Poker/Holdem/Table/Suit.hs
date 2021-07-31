@@ -1,4 +1,4 @@
-module Holdem.Table.Suit
+module Poker.Holdem.Table.Suit
   (
     suitsLookup
   ) where

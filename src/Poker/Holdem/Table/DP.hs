@@ -1,4 +1,4 @@
-module Holdem.Table.DP
+module Poker.Holdem.Table.DP
   (
     dpLookup
   ) where

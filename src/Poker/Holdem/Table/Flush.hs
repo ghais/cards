@@ -1,4 +1,4 @@
-module Holdem.Table.Flush
+module Poker.Holdem.Table.Flush
   (
     flushLookup
   ) where

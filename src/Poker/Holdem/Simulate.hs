@@ -1,41 +1,29 @@
-module Holdem
+-- |
+-- Module      : Poker.Holdem.Simulate
+-- Description : Monte Carlo simulation of a poker holdem game.
+-- Copyright   : (c) Ghais Issa, 2021
+--
+-- 
+
+module Poker.Holdem.Simulate
   (
-    Hole(..)
-  , Flop(..)
-  , Turn(..)
-  , Street(..)
-  , Community(..)
-  , Hand(..)
-  , Player(..)
+    Player(..)
   , Game(..)
-  , dealtCards
-  , completeHands
+  , simulate
   ) where
 
-import           Card
+import           Data.Random (RVar, RandomSource, runRVar)
+
 import           Control.Monad.State
+import           Data.List (transpose)
 
+import           Data.Random.Source.DevRandom (DevRandom (DevRandom))
+import           Poker.Deck
+import qualified Poker.Deck as Deck(shuffle)
+import           Poker.Holdem
+import           Poker.Holdem.Evaluate (HandRank, evaluate)
 
--- | Player's 2 cards.
-data Hole = Hole !Card !Card deriving stock (Show, Eq)
-
--- | First three community cards
-data Flop = Flop !Card !Card !Card deriving stock (Show, Eq)
-
--- | Fourth community card.
-newtype Turn = Turn Card deriving stock (Show, Eq)
-
--- | Fifth and last community card.
-newtype Street = Street Card deriving stock (Show, Eq)
-
--- | All community cards.
-data Community = Community !Flop !Turn !Street deriving stock (Show, Eq)
-
--- | A 7-card hand is made from a hole and community cards.
-data Hand = Hand !Hole !Community deriving stock (Show, Eq)
-
-
--- | 
+-- | A player can have 0, 1, 2 known cards.
 data Player = Player
   {
     card1 :: Maybe Card
@@ -45,16 +33,22 @@ data Player = Player
 -- | An abstraction that represents a poker game, with some unknowns.
 --This allows us to simulate a game from any possible state.
 data Game = Game
-  { numPlayers :: Int           -- ^ Number of players in the game.
-  , players    :: [Player]      -- ^ Other players.
+  {
+    players    :: [Player]      -- ^ Other players.
   , flop       :: Maybe Flop    -- ^ The flop if it happened. Nothing otherwise.
   , turn       :: Maybe Turn    -- ^ The turn if it happened. Nothing otherwise.
   , street     :: Maybe Street  -- ^ The street if it happened. Nothing otherwise.
   }
 
+-- | Run a Monte Carlo simulation of a game returning the probability of winning for each player.
+simulate :: (RandomSource m DevRandom) => Game -> Int -> m [Double]
+simulate game n = do
+  gameHands <- replicateM n $ simulateWinners game
+  return $ map ((/fromIntegral n) . sum) (transpose gameHands)
 
 
-dealtCards :: Game -> [Card]
+
+dealtCards :: Game -> [Card] 
 dealtCards Game{..} = let playerCards = concatMap dealtHands players
                           dealtHands (Player Nothing Nothing)     = []
                           dealtHands (Player (Just c1) Nothing)   = [c1]
@@ -114,4 +108,46 @@ getCommunityCards (Just (Flop c1 c2 c3)) (Just(Turn c4)) Nothing = do
   return (Community (Flop c1 c2 c3) (Turn c4) (Street c5))
 getCommunityCards (Just (Flop c1 c2 c3)) (Just(Turn c4)) (Just (Street c5)) = do
   return (Community (Flop c1 c2 c3) (Turn c4) (Street c5))
+
+
+
+playerHands :: Game -> RVar [[Card]]
+playerHands game = do
+  deck <- Deck.shuffle (gameDeck game)
+  case evalStateT (completeHands game) deck of
+    (Just cards) -> return cards
+    _            -> return []
+
+gameDeck :: Game -> Deck
+gameDeck game = remove (dealtCards game) stdDeck
+
+
+
+winners :: [HandRank] -> [Bool]
+winners scores = map (== minRank) scores where
+  minRank = maximum scores
+
+averageScore :: [Bool] -> [Double]
+averageScore winnerList = map (\x -> if x then 1/fromIntegral numWinners else 0) winnerList where
+  numWinners = length (filter (== True) winnerList)
+
+
+simulateOne :: (RandomSource m DevRandom) => Game -> m [([Card], HandRank)]
+simulateOne game = do
+  cards <- runRVar (playerHands game) DevRandom
+  let scores = map evaluate' cards
+  return $ zip cards scores
+  where evaluate' [c1, c2, c3, c4, c5, c6, c7] = evaluate c1 c2 c3 c4 c5 c6 c7
+        evaluate' _                            = undefined
+
+simulateWinners :: (RandomSource m DevRandom) => Game -> m [Double]
+simulateWinners game = do
+  scores <- map snd <$> simulateOne game
+  let gameWinners = winners scores
+  return $ averageScore gameWinners
+
+
+
+
+
 

@@ -1,8 +1,8 @@
 -- |
--- Module      : Card
--- Description : the module provides fundamental operations to a deck of cards.
+-- Module      : Poker.Deck
+-- Description : A deck of cards and its operations.
 -- Copyright   : (c) Ghais Issa, 2021
-module Card
+module Poker.Deck
   (
     Suit(..)
   , Rank(..)
@@ -103,7 +103,7 @@ remove cards (Deck n deck) = Deck (n - length cards) (deck \\ cards)
 -- For instance, to simulate a two player Hold'em game, one might wish
 -- to draw two cards for each player, and five cards for the community:
 --
--- >>> deck <- runRVar (shuffle fullDeck) DevRandom
+-- >>> deck <- runRVar (shuffle stdDeck) DevRandom
 -- >>> fst . fromJust $ draw [2,2,5] deck
 -- [[Ace Club,Queen Club],[Four Diamond,Nine Club],[Jack Heart,King Diamond,Three Heart,Four Club,Two Diamond]]
 draw ::
@@ -150,8 +150,6 @@ draw1_ handSize (Deck n deck) =
   let f (Just ([h], _)) = Just h
       f _               = Nothing
    in f $ draw [handSize] (Deck n deck)
-
-
 
 -- A card is represented as an Int. So we implement Show and Read explicitly.
 instance Show Card where
